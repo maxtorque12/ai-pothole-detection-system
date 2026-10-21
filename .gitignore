@@ -1,10 +1,38 @@
+# Virtual environments
 venv/
+.venv/
+env/
+
+# Python bytecode & cache
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.pytest_cache/
+
+# Model weights & serialized artifacts (Git Hygiene: never track weight files)
 *.pt
 *.onnx
 *.engine
+*.tflite
+*.weights
+*.bin
+weights/
+runs/
+
+# Video captures, media assets & temporary uploads
 *.mp4
 *.avi
+*.mov
+*.mkv
+backend_service/uploads/*
+!backend_service/uploads/.gitkeep
+uploads/*
+!uploads/.gitkeep
 datasets/
+
+# Local configuration & environment variables
 .env
+.env.local
+
+# Logs and runtime artifacts
+*.log
