@@ -66,6 +66,28 @@ function initFilters() {
       });
     });
   }
+
+  // Flush all captured data button
+  const flushBtn = document.getElementById("flush-btn");
+  if (flushBtn) {
+    flushBtn.addEventListener("click", async () => {
+      if (!confirm("Flush all captured pothole records and snapshots?")) {
+        return;
+      }
+      try {
+        const resp = await fetch("/api/v1/potholes", { method: "DELETE" });
+        if (resp.ok) {
+          allPotholes = [];
+          applyFilters();
+          showToast("Captured potholes and images flushed successfully!", "info");
+        } else {
+          showToast("Failed to flush server data.", "error");
+        }
+      } catch (err) {
+        showToast("Error communicating with server.", "error");
+      }
+    });
+  }
 }
 
 /**

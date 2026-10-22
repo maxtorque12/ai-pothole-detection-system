@@ -186,6 +186,18 @@ class DatabaseManager:
 
         return None
 
+    def clear_all(self) -> int:
+        """Flushes all stored defect records from MongoDB and in-memory cache."""
+        count = len(self._memory_store)
+        self._memory_store.clear()
+        if self._collection is not None:
+            try:
+                res = self._collection.delete_many({})
+                count = max(count, res.deleted_count)
+            except Exception as e:
+                logger.error("Failed clearing MongoDB collection: %s", e)
+        return count
+
 
 # Global database manager instance
 db_manager = DatabaseManager()
@@ -402,6 +414,42 @@ def update_pothole_status(defect_id: str):
             {
                 "message": "Pothole status updated successfully.",
                 "data": updated_record,
+            }
+        ),
+        200,
+    )
+
+
+@api_bp.route("/potholes", methods=["DELETE"])
+def flush_potholes():
+    """DELETE /api/v1/potholes
+
+    Flushes all recorded defects from the database and removes stored snapshot images.
+    """
+    count = db_manager.clear_all()
+
+    # Clear uploads folder (preserve .gitkeep)
+    deleted_files = 0
+    try:
+        if config.UPLOAD_FOLDER.exists():
+            for file in config.UPLOAD_FOLDER.iterdir():
+                if file.is_file() and file.name != ".gitkeep":
+                    try:
+                        file.unlink()
+                        deleted_files += 1
+                    except Exception:
+                        pass
+    except Exception as exc:
+        logger.error("Failed cleaning uploads folder: %s", exc)
+
+    logger.info("Flushed %d defect records and %d snapshot images.", count, deleted_files)
+    return (
+        jsonify(
+            {
+                "status": "success",
+                "message": f"Successfully flushed {count} defect records and {deleted_files} snapshot images.",
+                "deleted_records": count,
+                "deleted_images": deleted_files,
             }
         ),
         200,

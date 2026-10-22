@@ -106,7 +106,14 @@ class TestPotholeSystem(unittest.TestCase):
         res_patch = client.patch(f"/api/v1/potholes/{doc_id}", json={"status": "in-progress"})
         self.assertEqual(res_patch.status_code, 200)
         self.assertEqual(res_patch.get_json()["data"]["status"], "in-progress")
-        print(f"  [✓] REST API Lifecycle Verified (POST defect -> GET filter -> PATCH status)")
+
+        # 4. DELETE (Flush data & snapshots)
+        res_del = client.delete("/api/v1/potholes")
+        self.assertEqual(res_del.status_code, 200)
+        self.assertEqual(res_del.get_json()["status"], "success")
+        res_after = client.get("/api/v1/potholes")
+        self.assertEqual(len(res_after.get_json()["data"]), 0)
+        print(f"  [✓] REST API Lifecycle Verified (POST -> GET -> PATCH -> DELETE flush)")
 
     def test_05_web_dashboard_integration(self):
         """Verifies municipal dashboard static files and mock data."""
