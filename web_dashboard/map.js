@@ -7,7 +7,7 @@ const DEFAULT_CENTER = [28.6186, 77.3013];
 const DEFAULT_ZOOM = 14;
 
 // Global backend URL configuration (supports standalone or reverse-proxied hosting)
-const BACKEND_BASE_URL = window.location.port === "5000" 
+const BACKEND_BASE_URL = (window.location.protocol.startsWith("http"))
   ? window.location.origin 
   : "http://127.0.0.1:5000";
 
@@ -59,7 +59,8 @@ function resolveMediaUrl(url) {
   if (url.startsWith("data:") || url.startsWith("http://") || url.startsWith("https://")) {
     return url;
   }
-  return url.startsWith("/") ? url : `/${url}`;
+  const cleanPath = url.startsWith("/") ? url : `/${url}`;
+  return `${BACKEND_BASE_URL}${cleanPath}`;
 }
 
 /**

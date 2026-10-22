@@ -11,7 +11,9 @@ function resolveMediaUrl(url) {
   if (url.startsWith("data:") || url.startsWith("http://") || url.startsWith("https://")) {
     return url;
   }
-  return url.startsWith("/") ? url : `/${url}`;
+  const cleanPath = url.startsWith("/") ? url : `/${url}`;
+  const base = typeof BACKEND_BASE_URL !== "undefined" ? BACKEND_BASE_URL : window.location.origin;
+  return `${base}${cleanPath}`;
 }
 
 // Filter state
