@@ -77,6 +77,15 @@ def encode_image_base64(frame: np.ndarray, quality: int = 80) -> str:
     return f"data:image/jpeg;base64,{b64_str}"
 
 
+def enhance_road_contrast(frame_bgr: np.ndarray, clip_limit: float = 2.5) -> np.ndarray:
+    """Applies LAB CLAHE to cut through water glare and sharpen subtle defect rim gradients."""
+    lab = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2LAB)
+    l, a, b = cv2.split(lab)
+    clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(8, 8))
+    cl = clahe.apply(l)
+    return cv2.cvtColor(cv2.merge((cl, a, b)), cv2.COLOR_LAB2BGR)
+
+
 class PotholeDetectorEngine:
     """Orchestrates video ingestion, YOLOv8 GPU inference, alerting, and backend sync."""
 
@@ -92,6 +101,7 @@ class PotholeDetectorEngine:
         display: bool = True,
         lat: Optional[float] = None,
         lon: Optional[float] = None,
+        water_mode: bool = False,
     ) -> None:
         self.model_path = model_path or config.MODEL_PATH
         self.target_device = device or config.EDGE_DEVICE
@@ -105,6 +115,7 @@ class PotholeDetectorEngine:
         self.source = source
         self.backend_url = backend_url or config.BACKEND_API_URL
         self.display = display
+        self.water_mode = water_mode
 
         # Resolve compute device (NVIDIA GPU cuda:0 with graceful CPU fallback)
         self.resolved_device = self._resolve_device(self.target_device)
@@ -209,9 +220,12 @@ class PotholeDetectorEngine:
         frame_h, frame_w = frame.shape[:2]
         frame_area = frame_w * frame_h
 
+        # Apply adaptive CLAHE contrast enhancement when water/glare mode is enabled
+        infer_source = enhance_road_contrast(frame) if self.water_mode else frame
+
         # Execute YOLO multi-object tracking (ByteTrack)
         results = self.model.track(
-            source=frame,
+            source=infer_source,
             persist=True,
             tracker="bytetrack.yaml",
             device=self.resolved_device,
@@ -316,9 +330,10 @@ class PotholeDetectorEngine:
         gps_color = (0, 165, 255) if is_mock_gps else (0, 255, 0)
         source_tag = "WEBCAM" if self.stream_consumer.is_fallback() else "PHONE STREAM"
 
+        mode_str = " | WET-MODE: ON" if self.water_mode else ""
         hud_left = (
             f"FPS: {fps:.1f} | SRC: {source_tag} | DEV: {self.resolved_device.upper()} | "
-            f"POTHOLES: {self._total_detections_count}"
+            f"POTHOLES: {self._total_detections_count}{mode_str}"
         )
         cv2.putText(
             frame,
@@ -572,6 +587,11 @@ def parse_args() -> argparse.Namespace:
         help="Custom longitude for GPS telemetry (e.g. 77.2198).",
     )
     parser.add_argument(
+        "--water-mode",
+        action="store_true",
+        help="Enable adaptive CLAHE contrast enhancement for wet/water-filled roads and specular reflections.",
+    )
+    parser.add_argument(
         "--no-display",
         action="store_true",
         help="Run headless without rendering OpenCV GUI window.",
@@ -593,6 +613,7 @@ def main() -> None:
         display=not args.no_display,
         lat=args.lat,
         lon=args.lon,
+        water_mode=args.water_mode,
     )
     engine.run()
 

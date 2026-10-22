@@ -56,8 +56,8 @@ def main():
     print("[*] Initializing YOLOv8n backbone...")
     model = YOLO("yolov8n.pt")
 
-    # 4. Execute training
-    print("[*] Launching 50-epoch training loop on NVIDIA RTX 4060...")
+    # 4. Execute training with Perspective & Water Augmentations
+    print("[*] Launching training loop with perspective & water augmentation on NVIDIA RTX 4060...")
     results = model.train(
         data=str(DATASET_YAML),
         epochs=args.epochs,
@@ -66,15 +66,23 @@ def main():
         device=args.device,
         workers=args.workers,
         project="runs/pothole_training",
-        name="run_50epochs",
+        name="run_water_perspective",
         exist_ok=True,
         save=True,
         save_period=5,
         plots=True,
+        # Augmentations for perspective distortion and specular water reflection invariance
+        perspective=0.0015,  # 3D projective perspective distortion for non-vertical angles
+        shear=12.0,          # Shear distortion to simulate angled windshield tilt (-12 to +12 deg)
+        degrees=15.0,        # Random rotation (-15 to +15 deg)
+        scale=0.5,           # Multi-scale training (0.5 to 1.5)
+        hsv_s=0.7,           # Saturation jitter to handle wet dark asphalt vs bright dry roads
+        hsv_v=0.4,           # Brightness jitter to handle water specular glare
+        mosaic=1.0,          # 4-image mosaic blending
     )
 
     # 5. Export and copy best weights
-    best_weights = ROOT_DIR / "runs" / "pothole_training" / "run_50epochs" / "weights" / "best.pt"
+    best_weights = ROOT_DIR / "runs" / "pothole_training" / "run_water_perspective" / "weights" / "best.pt"
     export_dir = ROOT_DIR / "weights"
     export_dir.mkdir(parents=True, exist_ok=True)
     target_weights = export_dir / "pothole_best.pt"
