@@ -47,7 +47,7 @@ class EdgeConfig:
     # Local Hardware & Model
     EDGE_DEVICE: str = os.getenv("EDGE_DEVICE", "0")
     MODEL_PATH: str = os.getenv("MODEL_PATH", "yolov8n.pt")
-    CONFIDENCE_THRESHOLD: float = float(os.getenv("CONFIDENCE_THRESHOLD", "0.20"))
+    CONFIDENCE_THRESHOLD: float = float(os.getenv("CONFIDENCE_THRESHOLD", "0.35"))
 
     # Local Webcam Fallback
     USE_WEBCAM: bool = os.getenv("USE_WEBCAM", "false").strip().lower() in (
