@@ -41,11 +41,10 @@ function initMap() {
   // Re-position zoom controls to bottom-right
   L.control.zoom({ position: "bottomright" }).addTo(map);
 
-  // Modern CartoDB Positron / OSM tiles for clean municipal UI
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+  // OpenStreetMap standard tiles (100% free, public, no API key required)
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: "abcd",
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19,
   }).addTo(map);
 
