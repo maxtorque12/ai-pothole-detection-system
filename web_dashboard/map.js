@@ -1,9 +1,9 @@
 /**
  * Leaflet.js Map Initialization & Geospatial Defect Visualization
- * Centered on Connaught Place / Central Delhi [28.6139, 77.2090]
+ * Centered on Mayur Vihar Phase 2, East Delhi [28.6186, 77.3013]
  */
 
-const DEFAULT_CENTER = [28.6139, 77.2090];
+const DEFAULT_CENTER = [28.6186, 77.3013];
 const DEFAULT_ZOOM = 14;
 
 // Global backend URL configuration (supports standalone or reverse-proxied hosting)

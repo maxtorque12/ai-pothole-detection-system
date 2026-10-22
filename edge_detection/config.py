@@ -39,8 +39,8 @@ class EdgeConfig:
         "BACKEND_API_URL", "http://127.0.0.1:5000/api/v1/potholes"
     )
 
-    # Fallback Mock Coordinates (Central Delhi / Connaught Place)
-    MOCK_COORDINATES: Tuple[float, float] = (28.6139, 77.2090)
+    # Fallback Coordinates (Mayur Vihar Phase 2, East Delhi)
+    MOCK_COORDINATES: Tuple[float, float] = (28.6186, 77.3013)
     GPS_POLL_INTERVAL: float = float(os.getenv("GPS_POLL_INTERVAL", "1.0"))
     GPS_REQUEST_TIMEOUT: float = float(os.getenv("GPS_REQUEST_TIMEOUT", "2.0"))
 
