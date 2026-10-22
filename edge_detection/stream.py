@@ -53,6 +53,10 @@ class VideoStreamConsumer:
         else:
             self.source = source if source is not None else config.PHONE_STREAM_URL
 
+        # Automatically cast numeric string sources like '0' or '1' to integer camera index
+        if isinstance(self.source, str) and self.source.isdigit():
+            self.source = int(self.source)
+
         self.cap: Optional[cv2.VideoCapture] = None
         self._latest_frame: Optional[np.ndarray] = None
         self._frame_lock = threading.Lock()

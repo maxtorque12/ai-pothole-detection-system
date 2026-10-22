@@ -86,6 +86,7 @@ class PotholeDetectorEngine:
         device: Optional[str] = None,
         confidence_threshold: Optional[float] = None,
         use_webcam: bool = False,
+        camera_index: int = 0,
         source: Optional[str] = None,
         backend_url: Optional[str] = None,
         display: bool = True,
@@ -98,6 +99,7 @@ class PotholeDetectorEngine:
             else config.CONFIDENCE_THRESHOLD
         )
         self.use_webcam = use_webcam
+        self.camera_index = camera_index
         self.source = source
         self.backend_url = backend_url or config.BACKEND_API_URL
         self.display = display
@@ -116,6 +118,7 @@ class PotholeDetectorEngine:
         self.stream_consumer = VideoStreamConsumer(
             source=self.source,
             use_webcam=self.use_webcam,
+            webcam_fallback_index=self.camera_index,
         )
         self.gps_tracker = GPSTracker()
 
@@ -445,6 +448,12 @@ def parse_args() -> argparse.Namespace:
         help="Bypass network phone stream and use local PC webcam directly.",
     )
     parser.add_argument(
+        "--camera-index",
+        type=int,
+        default=config.WEBCAM_INDEX,
+        help="Webcam device index (0 for built-in webcam, 1 for external USB webcam).",
+    )
+    parser.add_argument(
         "--source",
         type=str,
         default=None,
@@ -490,6 +499,7 @@ def main() -> None:
         device=args.device,
         confidence_threshold=args.conf,
         use_webcam=args.use_webcam,
+        camera_index=args.camera_index,
         source=args.source,
         backend_url=args.backend_url,
         display=not args.no_display,
