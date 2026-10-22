@@ -27,8 +27,21 @@ if not logger.handlers:
     logger.setLevel(logging.INFO)
 
 
+def resolve_ip_location() -> Optional[Tuple[float, float]]:
+    """Resolves approximate latitude/longitude via public IP geolocation when GPS sensor is absent."""
+    try:
+        resp = requests.get("http://ip-api.com/json/", timeout=2.0)
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get("status") == "success" and "lat" in data and "lon" in data:
+                return float(data["lat"]), float(data["lon"])
+    except Exception:
+        pass
+    return None
+
+
 class GPSTracker:
-    """Threaded GPS polling client for IP Webcam telemetry."""
+    """Threaded GPS polling client for IP Webcam telemetry with auto-IP and motion fallback."""
 
     def __init__(
         self,
@@ -38,10 +51,17 @@ class GPSTracker:
     ) -> None:
         self.endpoint_url = endpoint_url or config.PHONE_GPS_URL
         self.poll_interval = poll_interval or config.GPS_POLL_INTERVAL
-        self.mock_coords = mock_coords or config.MOCK_COORDINATES
+        
+        # If coordinates not explicitly provided, attempt auto-detect via IP before falling back
+        if mock_coords is not None:
+            self.mock_coords = mock_coords
+        else:
+            detected_ip_coords = resolve_ip_location()
+            self.mock_coords = detected_ip_coords if detected_ip_coords else config.MOCK_COORDINATES
 
         self._current_latitude: float = self.mock_coords[0]
         self._current_longitude: float = self.mock_coords[1]
+        self._step_counter: int = 0
         self._is_mock_active: bool = True
         self._last_success_timestamp: float = 0.0
 
@@ -137,9 +157,18 @@ class GPSTracker:
         self._thread.start()
         return self
 
-    def get_coordinates(self) -> Tuple[float, float]:
-        """Thread-safe getter returning current (latitude, longitude)."""
+    def get_coordinates(self, advance_step: bool = False) -> Tuple[float, float]:
+        """Thread-safe getter returning current (latitude, longitude).
+        
+        If advance_step is True and operating on mock telemetry, simulates vehicle
+        motion by stepping ~15 meters forward along the street.
+        """
         with self._lock:
+            if advance_step and self._is_mock_active:
+                self._step_counter += 1
+                # Advance slightly along road (~15m per reported pothole)
+                self._current_latitude += 0.00012
+                self._current_longitude += 0.00008
             return self._current_latitude, self._current_longitude
 
     def is_using_mock(self) -> bool:

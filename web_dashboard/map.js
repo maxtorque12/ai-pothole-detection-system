@@ -52,6 +52,17 @@ function initMap() {
 }
 
 /**
+ * Safely resolves defect media URLs across local and remote devices.
+ */
+function resolveMediaUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("data:") || url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  return url.startsWith("/") ? url : `/${url}`;
+}
+
+/**
  * Generates custom HTML for defect popups.
  */
 function createPopupContent(pothole) {
@@ -63,16 +74,8 @@ function createPopupContent(pothole) {
   const confidencePct = Math.round((pothole.confidence || 0.8) * 100);
   const ratioPct = pothole.bbox_ratio ? (pothole.bbox_ratio * 100).toFixed(1) + "%" : "N/A";
   const streetName = pothole.street || `Coordinates: ${pothole.latitude.toFixed(5)}, ${pothole.longitude.toFixed(5)}`;
-  const snapshotSrc = pothole.image_url 
-    ? (pothole.image_url.startsWith("http") || pothole.image_url.startsWith("data:") 
-        ? pothole.image_url 
-        : `${BACKEND_BASE_URL}${pothole.image_url}`)
-    : "";
-  const cropSrc = pothole.crop_url
-    ? (pothole.crop_url.startsWith("http") || pothole.crop_url.startsWith("data:")
-        ? pothole.crop_url
-        : `${BACKEND_BASE_URL}${pothole.crop_url}`)
-    : "";
+  const snapshotSrc = resolveMediaUrl(pothole.image_url);
+  const cropSrc = resolveMediaUrl(pothole.crop_url);
 
   let imagesHtml = "";
   if (snapshotSrc && cropSrc) {
@@ -143,6 +146,9 @@ function updateMapMarkers(items) {
   markerLayerGroup.clearLayers();
   markerMap.clear();
 
+  const coordCounts = new Map();
+  const validLatLngs = [];
+
   items.forEach((pothole) => {
     const sevKey = pothole.severity.toLowerCase();
     const config = SEVERITY_COLORS[sevKey] || SEVERITY_COLORS.low;
@@ -150,8 +156,24 @@ function updateMapMarkers(items) {
     // Radius proportional to severity
     const radius = sevKey === "high" ? 14 : (sevKey === "medium" ? 11 : 8);
 
+    // Coordinate collision dispersal: offset overlapping markers so every pothole is individually clickable
+    const coordKey = `${pothole.latitude.toFixed(5)},${pothole.longitude.toFixed(5)}`;
+    const count = coordCounts.get(coordKey) || 0;
+    coordCounts.set(coordKey, count + 1);
+
+    let displayLat = pothole.latitude;
+    let displayLon = pothole.longitude;
+    if (count > 0) {
+      // Disperse in a rosette ring around the central point (~15m per ring)
+      const angle = (count * 2 * Math.PI) / 6;
+      const dist = 0.00014 * Math.ceil(count / 6);
+      displayLat += dist * Math.cos(angle);
+      displayLon += dist * Math.sin(angle) * 1.15;
+    }
+    validLatLngs.push([displayLat, displayLon]);
+
     // Circle Marker
-    const marker = L.circleMarker([pothole.latitude, pothole.longitude], {
+    const marker = L.circleMarker([displayLat, displayLon], {
       radius: radius,
       fillColor: config.fill,
       color: config.border,
@@ -176,6 +198,14 @@ function updateMapMarkers(items) {
     marker.addTo(markerLayerGroup);
     markerMap.set(pothole.id, marker);
   });
+
+  // Automatically adjust map viewport to frame all reported potholes
+  if (validLatLngs.length > 0 && map) {
+    const bounds = L.latLngBounds(validLatLngs);
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, { maxZoom: 16, padding: [40, 40] });
+    }
+  }
 }
 
 /**

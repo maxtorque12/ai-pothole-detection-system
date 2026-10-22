@@ -90,6 +90,8 @@ class PotholeDetectorEngine:
         source: Optional[str] = None,
         backend_url: Optional[str] = None,
         display: bool = True,
+        lat: Optional[float] = None,
+        lon: Optional[float] = None,
     ) -> None:
         self.model_path = model_path or config.MODEL_PATH
         self.target_device = device or config.EDGE_DEVICE
@@ -120,7 +122,8 @@ class PotholeDetectorEngine:
             use_webcam=self.use_webcam,
             webcam_fallback_index=self.camera_index,
         )
-        self.gps_tracker = GPSTracker()
+        mock_coords = (lat, lon) if (lat is not None and lon is not None) else None
+        self.gps_tracker = GPSTracker(mock_coords=mock_coords)
 
         # Thread pool for non-blocking asynchronous POST requests to backend
         self._dispatch_executor = ThreadPoolExecutor(
@@ -412,13 +415,16 @@ class PotholeDetectorEngine:
                             confidence,
                         )
 
+                        # Acquire coordinates (advances simulated road position in mock mode)
+                        disp_lat, disp_lon = self.gps_tracker.get_coordinates(advance_step=True)
+
                         # Trigger non-blocking audio-visual alert if High severity
                         if severity == "High":
                             trigger_alert(
                                 severity=severity,
                                 confidence=confidence,
-                                latitude=lat,
-                                longitude=lon,
+                                latitude=disp_lat,
+                                longitude=disp_lon,
                                 bbox_ratio=bbox_ratio,
                             )
 
@@ -439,8 +445,8 @@ class PotholeDetectorEngine:
                         payload = {
                             "timestamp": datetime.now(timezone.utc).isoformat(),
                             "track_id": track_id,
-                            "latitude": lat,
-                            "longitude": lon,
+                            "latitude": disp_lat,
+                            "longitude": disp_lon,
                             "severity": severity,
                             "confidence": confidence,
                             "bbox_ratio": bbox_ratio,
@@ -534,6 +540,18 @@ def parse_args() -> argparse.Namespace:
         help="Backend REST API endpoint for defect ingest.",
     )
     parser.add_argument(
+        "--lat",
+        type=float,
+        default=None,
+        help="Custom latitude for GPS telemetry (e.g. 28.6327).",
+    )
+    parser.add_argument(
+        "--lon",
+        type=float,
+        default=None,
+        help="Custom longitude for GPS telemetry (e.g. 77.2198).",
+    )
+    parser.add_argument(
         "--no-display",
         action="store_true",
         help="Run headless without rendering OpenCV GUI window.",
@@ -553,6 +571,8 @@ def main() -> None:
         source=args.source,
         backend_url=args.backend_url,
         display=not args.no_display,
+        lat=args.lat,
+        lon=args.lon,
     )
     engine.run()
 

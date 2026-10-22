@@ -3,6 +3,17 @@
  * Coordinates filter state between Leaflet map markers and the sidebar work-order list.
  */
 
+/**
+ * Resolves media URLs safely across local and network clients without breaking on origins.
+ */
+function resolveMediaUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("data:") || url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  return url.startsWith("/") ? url : `/${url}`;
+}
+
 // Filter state
 const filterState = {
   severity: "all",
@@ -202,13 +213,8 @@ function renderWorkOrders(items) {
       const confidencePct = Math.round((item.confidence || 0.8) * 100);
       const ratioPct = item.bbox_ratio ? (item.bbox_ratio * 100).toFixed(1) + "%" : "N/A";
       const streetName = item.street || `Lat: ${item.latitude.toFixed(4)}, Lon: ${item.longitude.toFixed(4)}`;
-      const baseUrl = (typeof BACKEND_BASE_URL !== "undefined")
-        ? BACKEND_BASE_URL
-        : (window.location.port === "5000" ? window.location.origin : "http://127.0.0.1:5000");
       const thumb = item.crop_url || item.image_url;
-      const thumbSrc = thumb
-        ? (thumb.startsWith("http") || thumb.startsWith("data:") ? thumb : `${baseUrl}${thumb}`)
-        : "";
+      const thumbSrc = resolveMediaUrl(thumb);
 
       return `
         <div class="work-order-card" id="card-${item.id}" onclick="focusPothole('${item.id}')">
