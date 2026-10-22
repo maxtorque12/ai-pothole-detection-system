@@ -418,6 +418,78 @@ function togglePhoneGpsSync() {
   showToast("Broadcasting live phone satellite GPS to detector!", "success");
 }
 
+let customLocationMarker = null;
+let isSettingLocation = false;
+
+/**
+ * Allows user to set demo coordinates by clicking anywhere on the map.
+ */
+function promptCustomLocation() {
+  const btn = document.getElementById("custom-gps-btn");
+  const text = document.getElementById("custom-gps-text");
+
+  if (isSettingLocation) {
+    isSettingLocation = false;
+    if (map) map.getContainer().style.cursor = "";
+    if (text) text.textContent = "Set Location";
+    if (btn) btn.style.background = "rgba(168, 85, 247, 0.15)";
+    showToast("Cancelled map pin mode.", "info");
+    return;
+  }
+
+  isSettingLocation = true;
+  if (map) map.getContainer().style.cursor = "crosshair";
+  if (text) text.textContent = "Click Map...";
+  if (btn) btn.style.background = "rgba(168, 85, 247, 0.4)";
+  showToast("Click anywhere on the map to set the vehicle's demo location!", "info");
+
+  map.once("click", (e) => {
+    isSettingLocation = false;
+    if (map) map.getContainer().style.cursor = "";
+    const lat = e.latlng.lat;
+    const lon = e.latlng.lng;
+
+    if (customLocationMarker) {
+      map.removeLayer(customLocationMarker);
+    }
+
+    customLocationMarker = L.circleMarker([lat, lon], {
+      radius: 11,
+      fillColor: "#a855f7",
+      color: "#ffffff",
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.9,
+    }).addTo(map);
+    customLocationMarker.bindTooltip("🚗 Current Vehicle Demo Location", { permanent: true, direction: "top" });
+
+    fetch(`${BACKEND_BASE_URL}/api/v1/telemetry/gps`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        latitude: lat,
+        longitude: lon,
+        accuracy: 1.0,
+        timestamp: new Date().toISOString(),
+      }),
+    })
+      .then((res) => res.json())
+      .then(() => {
+        if (text) text.textContent = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+        if (btn) {
+          btn.style.background = "rgba(168, 85, 247, 0.35)";
+          btn.style.borderColor = "#c084fc";
+          btn.style.color = "#f3e8ff";
+        }
+        showToast(`Vehicle location set to [${lat.toFixed(4)}, ${lon.toFixed(4)}]!`, "success");
+      })
+      .catch((err) => {
+        console.warn("Failed sending GPS telemetry:", err);
+        showToast("Failed to set telemetry location.", "error");
+      });
+  });
+}
+
 // Global bootstrap on window load
 window.addEventListener("DOMContentLoaded", () => {
   initMap();
