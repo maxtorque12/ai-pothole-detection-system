@@ -656,6 +656,91 @@
     .toast-info {
       border-left-color: var(--accent-blue);
     }
+
+    /* Live Video Stream Floating PiP */
+    .live-stream-btn {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+      transition: all 0.2s;
+    }
+
+    .live-stream-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.6);
+    }
+
+    .live-stream-pip {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      width: 320px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+    }
+
+    .live-stream-pip.open {
+      display: flex;
+    }
+
+    .pip-header {
+      background: #0f172a;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .pip-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #10b981;
+      letter-spacing: 0.05em;
+    }
+
+    .pip-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .pip-close:hover {
+      color: #fff;
+    }
+
+    .pip-body {
+      width: 100%;
+      height: 180px;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pip-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
   </style>
 </head>
 <body>
@@ -693,6 +778,12 @@
         <span class="value" id="count-repaired">0</span>
       </div>
       <div class="status-badge status-live" id="connection-status">INITIALIZING</div>
+      <button class="live-stream-btn" id="live-stream-toggle" title="Toggle Live Camera Video Feed">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="8" fill="#ef4444"></circle>
+        </svg>
+        Live Video
+      </button>
     </div>
   </header>
 
@@ -700,6 +791,17 @@
   <main class="dashboard-layout">
     <!-- Leaflet OpenStreetMap Container -->
     <div id="map"></div>
+
+    <!-- Live Video Stream Floating Picture-in-Picture -->
+    <div class="live-stream-pip" id="live-stream-pip">
+      <div class="pip-header">
+        <span class="pip-title">● LIVE AI CAMERA STREAM</span>
+        <button class="pip-close" id="pip-close" title="Close Live Stream">&times;</button>
+      </div>
+      <div class="pip-body">
+        <img src="/api/v1/live_stream" alt="Live Camera Video Stream" class="pip-video" id="pip-video-img" />
+      </div>
+    </div>
 
     <!-- Collapsible Work-Order Sidebar -->
     <aside class="sidebar">

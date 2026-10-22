@@ -19,7 +19,9 @@ import uuid
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from flask import Blueprint, current_app, jsonify, request, send_from_directory
+from flask import Blueprint, current_app, jsonify, request, send_from_directory, Response
+import threading
+import time
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
@@ -412,3 +414,44 @@ def health_check():
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     ), 200
+
+
+# Live video stream buffer
+_live_frame_bytes: Optional[bytes] = None
+_live_frame_lock = threading.Lock()
+_live_frame_event = threading.Event()
+
+
+@api_bp.route("/live_frame", methods=["POST"])
+def ingest_live_frame():
+    """Ingests latest JPEG frame from edge detector."""
+    global _live_frame_bytes
+    raw_data = request.data
+    if raw_data:
+        with _live_frame_lock:
+            _live_frame_bytes = raw_data
+        _live_frame_event.set()
+    return jsonify({"status": "ok"}), 200
+
+
+@api_bp.route("/live_stream", methods=["GET"])
+def stream_live_video():
+    """Streams MJPEG feed to browsers and smartphones."""
+    def generate():
+        while True:
+            _live_frame_event.wait(timeout=0.1)
+            _live_frame_event.clear()
+            with _live_frame_lock:
+                frame = _live_frame_bytes
+            if frame:
+                yield (
+                    b"--frame\r\n"
+                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
+                )
+            else:
+                time.sleep(0.05)
+
+    return Response(
+        generate(),
+        mimetype="multipart/x-mixed-replace; boundary=frame",
+    )

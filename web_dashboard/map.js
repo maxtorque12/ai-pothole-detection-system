@@ -271,6 +271,27 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Live Stream PiP toggle
+  const liveToggleBtn = document.getElementById("live-stream-toggle");
+  const livePip = document.getElementById("live-stream-pip");
+  const pipClose = document.getElementById("pip-close");
+  const pipVideoImg = document.getElementById("pip-video-img");
+
+  if (liveToggleBtn && livePip) {
+    liveToggleBtn.addEventListener("click", () => {
+      livePip.classList.toggle("open");
+      if (livePip.classList.contains("open") && pipVideoImg) {
+        pipVideoImg.src = `${BACKEND_BASE_URL}/api/v1/live_stream?t=${Date.now()}`;
+      }
+    });
+  }
+
+  if (pipClose && livePip) {
+    pipClose.addEventListener("click", () => {
+      livePip.classList.remove("open");
+    });
+  }
+
   // Modal close handlers
   const modal = document.getElementById("image-modal");
   if (modal) {

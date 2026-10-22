@@ -130,8 +130,24 @@ class PotholeDetectorEngine:
 
         # Cooldown state to prevent duplicate HTTP dispatches across contiguous frames
         self._last_dispatch_time: float = 0.0
+        self._last_stream_time: float = 0.0
         self._total_detections_count: int = 0
         self._total_dispatches_sent: int = 0
+
+    def _stream_frame_async(self, frame_bgr: np.ndarray) -> None:
+        """Sends lightweight compressed JPEG frame to backend live stream."""
+        try:
+            success, buffer = cv2.imencode(".jpg", frame_bgr, [int(cv2.IMWRITE_JPEG_QUALITY), 55])
+            if success:
+                live_url = self.backend_url.replace("/potholes", "/live_frame")
+                self._http_session.post(
+                    live_url,
+                    data=buffer.tobytes(),
+                    headers={"Content-Type": "application/octet-stream"},
+                    timeout=0.5,
+                )
+        except Exception:
+            pass
 
     def _resolve_device(self, requested_device: str) -> str:
         """Validates requested device and falls back to CPU if CUDA is not available."""
@@ -409,7 +425,12 @@ class PotholeDetectorEngine:
                 # 4. HUD Telemetry Overlay
                 self._render_hud(annotated_frame, current_fps, lat, lon, is_mock_gps)
 
-                # 5. Display Window
+                # 5. Non-blocking Live Video Stream Dispatch (~12 FPS)
+                if now - self._last_stream_time >= 0.08:
+                    self._last_stream_time = now
+                    self._dispatch_executor.submit(self._stream_frame_async, annotated_frame)
+
+                # 6. Display Window
                 if self.display:
                     cv2.imshow(window_name, annotated_frame)
                     key = cv2.waitKey(1) & 0xFF
