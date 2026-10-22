@@ -469,6 +469,52 @@ def health_check():
     ), 200
 
 
+# Live GPS telemetry buffer
+_latest_live_gps: Optional[Dict[str, Any]] = None
+_latest_gps_lock = threading.Lock()
+
+
+@api_bp.route("/telemetry/gps", methods=["POST"])
+def ingest_live_gps():
+    """POST /api/v1/telemetry/gps
+
+    Ingests live satellite GPS coordinates broadcast by a mobile phone browser or sensor client.
+    """
+    global _latest_live_gps
+    if not request.is_json:
+        return jsonify({"error": "Request body must be JSON."}), 400
+
+    data = request.get_json()
+    lat = data.get("latitude")
+    lon = data.get("longitude")
+    if lat is None or lon is None:
+        return jsonify({"error": "Missing latitude or longitude."}), 400
+
+    with _latest_gps_lock:
+        _latest_live_gps = {
+            "latitude": float(lat),
+            "longitude": float(lon),
+            "accuracy": data.get("accuracy"),
+            "timestamp": data.get("timestamp") or datetime.now(timezone.utc).isoformat(),
+            "received_at": time.time(),
+        }
+
+    return jsonify({"status": "ok", "data": _latest_live_gps}), 200
+
+
+@api_bp.route("/telemetry/gps", methods=["GET"])
+def get_live_gps():
+    """GET /api/v1/telemetry/gps
+
+    Returns the latest live GPS coordinates broadcast from connected mobile devices.
+    """
+    with _latest_gps_lock:
+        if _latest_live_gps and (time.time() - _latest_live_gps.get("received_at", 0) < 60):
+            return jsonify({"status": "live", "data": _latest_live_gps}), 200
+
+    return jsonify({"status": "offline", "data": None}), 200
+
+
 # Live video stream buffer
 _live_frame_bytes: Optional[bytes] = None
 _live_frame_lock = threading.Lock()

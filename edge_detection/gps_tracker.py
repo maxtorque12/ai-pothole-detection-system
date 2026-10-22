@@ -105,7 +105,8 @@ class GPSTracker:
         return None
 
     def _poll_once(self) -> None:
-        """Executes a single HTTP GET request to the phone's sensors endpoint."""
+        """Executes periodic check against IP Webcam and backend telemetry endpoints."""
+        # 1. Check primary phone endpoint (e.g. IP Webcam /sensors.json)
         try:
             resp = self._session.get(
                 self.endpoint_url,
@@ -121,17 +122,32 @@ class GPSTracker:
                         self._is_mock_active = False
                         self._last_success_timestamp = time.time()
                     return
-
-            # Phone responded but returned no valid GPS fix
-            with self._lock:
-                self._current_latitude, self._current_longitude = self.mock_coords
-                self._is_mock_active = True
-
         except requests.RequestException:
-            # Unreachable or timed out -> fallback to mock coordinates
-            with self._lock:
-                self._current_latitude, self._current_longitude = self.mock_coords
-                self._is_mock_active = True
+            pass
+
+        # 2. Check backend live mobile GPS sync (/api/v1/telemetry/gps)
+        try:
+            backend_gps_url = "http://127.0.0.1:5000/api/v1/telemetry/gps"
+            resp_b = self._session.get(backend_gps_url, timeout=1.0)
+            if resp_b.status_code == 200:
+                payload = resp_b.json()
+                if payload.get("status") == "live" and payload.get("data"):
+                    gps_data = payload["data"]
+                    lat = float(gps_data["latitude"])
+                    lon = float(gps_data["longitude"])
+                    with self._lock:
+                        self._current_latitude = lat
+                        self._current_longitude = lon
+                        self._is_mock_active = False
+                        self._last_success_timestamp = time.time()
+                    return
+        except Exception:
+            pass
+
+        # 3. Fallback to calibrated location if neither live source is active
+        with self._lock:
+            self._current_latitude, self._current_longitude = self.mock_coords
+            self._is_mock_active = True
 
     def _worker(self) -> None:
         """Background thread executing periodic telemetry polls."""

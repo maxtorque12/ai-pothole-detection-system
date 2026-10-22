@@ -113,7 +113,14 @@ class TestPotholeSystem(unittest.TestCase):
         self.assertEqual(res_del.get_json()["status"], "success")
         res_after = client.get("/api/v1/potholes")
         self.assertEqual(len(res_after.get_json()["data"]), 0)
-        print(f"  [✓] REST API Lifecycle Verified (POST -> GET -> PATCH -> DELETE flush)")
+
+        # 5. Mobile Phone GPS Telemetry Sync
+        res_gps = client.post("/api/v1/telemetry/gps", json={"latitude": 28.6186, "longitude": 77.3013, "accuracy": 5.0})
+        self.assertEqual(res_gps.status_code, 200)
+        res_gps_get = client.get("/api/v1/telemetry/gps")
+        self.assertEqual(res_gps_get.status_code, 200)
+        self.assertEqual(res_gps_get.get_json()["data"]["latitude"], 28.6186)
+        print(f"  [✓] REST API Lifecycle Verified (POST -> GET -> PATCH -> DELETE -> GPS Sync)")
 
     def test_05_web_dashboard_integration(self):
         """Verifies municipal dashboard static files and mock data."""

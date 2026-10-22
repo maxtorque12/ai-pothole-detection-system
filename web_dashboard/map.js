@@ -356,6 +356,67 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
+let gpsWatchId = null;
+
+/**
+ * Broadcasts live satellite/Wi-Fi GPS coordinates from mobile browser to backend.
+ */
+function togglePhoneGpsSync() {
+  const btn = document.getElementById("phone-gps-btn");
+  const text = document.getElementById("phone-gps-text");
+
+  if (gpsWatchId !== null) {
+    navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId = null;
+    if (btn) {
+      btn.style.background = "rgba(14, 165, 233, 0.15)";
+      btn.style.color = "#38bdf8";
+      btn.style.borderColor = "rgba(14, 165, 233, 0.4)";
+    }
+    if (text) text.textContent = "Sync Phone GPS";
+    showToast("Phone GPS broadcast stopped.", "info");
+    return;
+  }
+
+  if (!("geolocation" in navigator)) {
+    showToast("Geolocation is not supported by your browser.", "error");
+    return;
+  }
+
+  gpsWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const accuracy = pos.coords.accuracy;
+
+      fetch("/api/v1/telemetry/gps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          latitude: lat,
+          longitude: lon,
+          accuracy: accuracy,
+          timestamp: new Date().toISOString(),
+        }),
+      }).catch((err) => console.debug("GPS POST error:", err));
+
+      if (btn) {
+        btn.style.background = "rgba(16, 185, 129, 0.25)";
+        btn.style.color = "#34d399";
+        btn.style.borderColor = "#10b981";
+      }
+      if (text) text.textContent = `GPS: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+    },
+    (err) => {
+      console.warn("Geolocation watch error:", err);
+      showToast(`GPS Error: ${err.message}`, "error");
+    },
+    { enableHighAccuracy: true, maximumAge: 1000 }
+  );
+
+  showToast("Broadcasting live phone satellite GPS to detector!", "success");
+}
+
 // Global bootstrap on window load
 window.addEventListener("DOMContentLoaded", () => {
   initMap();
