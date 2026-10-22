@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mobile GPS Telemetry Broadcaster</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #0f172a;
+      --card-border: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #0ea5e9;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+      width: 100%;
+      max-width: 440px;
+    }
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(14, 165, 233, 0.12);
+      border: 1px solid rgba(14, 165, 233, 0.35);
+      border-radius: 999px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      50% { transform: scale(1.4); opacity: 1; box-shadow: 0 0 10px var(--accent); }
+      100% { transform: scale(0.9); opacity: 0.8; }
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .main-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 440px;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+      margin-bottom: 16px;
+    }
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 16px;
+    }
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .status-standby { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); }
+    .status-active { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success); }
+    .coord-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .coord-box {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .coord-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .coord-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 17px;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+    .metrics-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .metric-mini {
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+    .metric-mini-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+    .metric-mini-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .btn-toggle {
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      border: none;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: white;
+      box-shadow: 0 6px 18px rgba(14, 165, 233, 0.35);
+    }
+    .btn-toggle.active {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      box-shadow: 0 6px 18px rgba(239, 68, 68, 0.35);
+    }
+    .btn-toggle:active {
+      transform: scale(0.98);
+    }
+    .footer-links {
+      text-align: center;
+      margin-top: 10px;
+      width: 100%;
+      max-width: 440px;
+    }
+    .footer-links a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .log-stream {
+      margin-top: 14px;
+      padding: 10px;
+      background: #020617;
+      border-radius: 8px;
+      border: 1px solid #1e293b;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #94a3b8;
+      max-height: 80px;
+      overflow-y: auto;
+    }
+    .log-item { margin-bottom: 3px; }
+    .log-success { color: #34d399; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo-badge">
+      <span class="pulse-dot"></span>
+      Vehicle Telemetry Node
+    </div>
+    <h1>Mobile GPS Broadcaster</h1>
+    <p class="subtitle">Broadcasts live phone satellite telemetry directly to the AI detection edge</p>
+  </div>
+
+  <div class="main-card">
+    <div class="status-row">
+      <span style="font-size: 12px; font-weight: 600;">STREAM STATUS</span>
+      <span class="status-badge status-standby" id="badge-status">STANDBY</span>
+    </div>
+
+    <div class="coord-grid">
+      <div class="coord-box">
+        <div class="coord-label">Latitude</div>
+        <div class="coord-val" id="val-lat">--.------</div>
+      </div>
+      <div class="coord-box">
+        <div class="coord-label">Longitude</div>
+        <div class="coord-val" id="val-lon">--.------</div>
+      </div>
+    </div>
+
+    <div class="metrics-row">
+      <div class="metric-mini">
+        <div class="metric-mini-label">Accuracy</div>
+        <div class="metric-mini-val" id="val-acc">-- m</div>
+      </div>
+      <div class="metric-mini">
+        <div class="metric-mini-label">Speed</div>
+        <div class="metric-mini-val" id="val-spd">-- km/h</div>
+      </div>
+      <div class="metric-mini">
+        <div class="metric-mini-label">Packets</div>
+        <div class="metric-mini-val" id="val-pkts">0</div>
+      </div>
+    </div>
+
+    <button class="btn-toggle" id="btn-toggle" onclick="toggleBroadcasting()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+      </svg>
+      <span id="btn-label">START BROADCASTING</span>
+    </button>
+
+    <div class="log-stream" id="log-box">
+      <div class="log-item">> Telemetry broadcaster initialized. Ready.</div>
+    </div>
+  </div>
+
+  <div class="footer-links">
+    <a href="/dashboard">← Back to Municipal Dashboard</a>
+  </div>
+
+  <script>
+    let isBroadcasting = false;
+    let watchId = null;
+    let keepAliveTimer = null;
+    let packetCount = 0;
+    let lastCoords = null;
+
+    const BACKEND_BASE = window.location.protocol.startsWith("http")
+      ? window.location.origin
+      : "http://127.0.0.1:5000";
+
+    function log(msg, isSuccess = false) {
+      const box = document.getElementById("log-box");
+      const d = new Date();
+      const timeStr = d.toTimeString().split(" ")[0];
+      const div = document.createElement("div");
+      div.className = "log-item" + (isSuccess ? " log-success" : "");
+      div.textContent = `[${timeStr}] ${msg}`;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    async function sendCoords(lat, lon, acc, speed) {
+      try {
+        const resp = await fetch(`${BACKEND_BASE}/api/v1/telemetry/gps`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            latitude: lat,
+            longitude: lon,
+            accuracy: acc,
+            speed: speed,
+            timestamp: new Date().toISOString()
+          })
+        });
+        if (resp.ok) {
+          packetCount++;
+          document.getElementById("val-pkts").textContent = packetCount;
+          log(`GPS Sent: ${lat.toFixed(5)}, ${lon.toFixed(5)} (±${Math.round(acc)}m)`, true);
+        }
+      } catch (e) {
+        log(`Transmit error: ${e.message}`);
+      }
+    }
+
+    function toggleBroadcasting() {
+      if (isBroadcasting) {
+        stopBroadcasting();
+      } else {
+        startBroadcasting();
+      }
+    }
+
+    function startBroadcasting() {
+      if (!("geolocation" in navigator)) {
+        alert("Geolocation is not supported by your browser.");
+        return;
+      }
+
+      const btn = document.getElementById("btn-toggle");
+      const label = document.getElementById("btn-label");
+      const badge = document.getElementById("badge-status");
+
+      isBroadcasting = true;
+      btn.classList.add("active");
+      label.textContent = "STOP BROADCASTING";
+      badge.className = "status-badge status-active";
+      badge.textContent = "LIVE BROADCAST";
+      log("Acquiring high-accuracy GNSS/GPS lock...");
+
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const acc = pos.coords.accuracy || 5;
+          const spd = pos.coords.speed ? (pos.coords.speed * 3.6).toFixed(1) : "0.0";
+
+          lastCoords = { lat, lon, acc, spd };
+
+          document.getElementById("val-lat").textContent = lat.toFixed(6);
+          document.getElementById("val-lon").textContent = lon.toFixed(6);
+          document.getElementById("val-acc").textContent = `±${Math.round(acc)}m`;
+          document.getElementById("val-spd").textContent = `${spd} km/h`;
+
+          sendCoords(lat, lon, acc, pos.coords.speed);
+        },
+        (err) => {
+          log(`GPS Error: ${err.message}`);
+          badge.textContent = "GPS ERROR";
+        },
+        { enableHighAccuracy: true, maximumAge: 1000 }
+      );
+
+      // Heartbeat pulse every 1.5s if stationary
+      keepAliveTimer = setInterval(() => {
+        if (isBroadcasting && lastCoords) {
+          sendCoords(lastCoords.lat, lastCoords.lon, lastCoords.acc, 0);
+        }
+      }, 1500);
+    }
+
+    function stopBroadcasting() {
+      isBroadcasting = false;
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      if (keepAliveTimer !== null) {
+        clearInterval(keepAliveTimer);
+        keepAliveTimer = null;
+      }
+      const btn = document.getElementById("btn-toggle");
+      const label = document.getElementById("btn-label");
+      const badge = document.getElementById("badge-status");
+
+      btn.classList.remove("active");
+      label.textContent = "START BROADCASTING";
+      badge.className = "status-badge status-standby";
+      badge.textContent = "STANDBY";
+      log("Broadcasting stopped.");
+    }
+  </script>
+</body>
+</html>

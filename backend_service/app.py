@@ -66,6 +66,13 @@ def create_app() -> Flask:
             }
         )
 
+    @app.route("/gps", methods=["GET"])
+    def serve_gps_broadcaster():
+        """Serves mobile phone GPS telemetry broadcaster."""
+        if (web_dashboard_dir / "gps.html").exists():
+            return send_from_directory(web_dashboard_dir, "gps.html")
+        return jsonify({"error": "GPS broadcaster not found."}), 404
+
     @app.route("/<path:filename>", methods=["GET"])
     def serve_dashboard_asset(filename: str):
         """Serves dashboard assets (map.js, filters.js, mock_data.json) if requested."""

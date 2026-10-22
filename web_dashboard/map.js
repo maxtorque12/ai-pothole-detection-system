@@ -517,6 +517,8 @@ window.addEventListener("DOMContentLoaded", () => {
       livePip.classList.toggle("open");
       if (livePip.classList.contains("open") && pipVideoImg) {
         pipVideoImg.src = `${BACKEND_BASE_URL}/api/v1/live_stream?t=${Date.now()}`;
+      } else if (pipVideoImg) {
+        pipVideoImg.src = "";
       }
     });
   }
@@ -524,6 +526,7 @@ window.addEventListener("DOMContentLoaded", () => {
   if (pipClose && livePip) {
     pipClose.addEventListener("click", () => {
       livePip.classList.remove("open");
+      if (pipVideoImg) pipVideoImg.src = "";
     });
   }
 
