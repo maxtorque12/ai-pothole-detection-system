@@ -141,6 +141,14 @@ class GPSTracker:
             self.poll_interval,
             self.mock_coords,
         )
+        # Automatically activate phone GPS receiver if communicating with IP Webcam
+        try:
+            if "/sensors.json" in self.endpoint_url:
+                base_url = self.endpoint_url.split("/sensors.json")[0]
+                self._session.get(f"{base_url}/settings/gps_active?set=on", timeout=1.5)
+        except Exception:
+            pass
+
         while not self._stop_event.is_set():
             self._poll_once()
             self._stop_event.wait(self.poll_interval)
