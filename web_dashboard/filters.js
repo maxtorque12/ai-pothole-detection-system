@@ -235,7 +235,7 @@ function renderWorkOrders(items) {
                 <span><b>Time:</b> ${timeStr}</span>
               </div>
             </div>
-            ${thumbSrc ? `<img src="${thumbSrc}" alt="Pothole" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color); cursor:pointer; flex-shrink:0;" onclick="event.stopPropagation(); openImageModal('${thumbSrc}')" title="Click to enlarge" />` : ""}
+            ${thumbSrc ? `<img src="${thumbSrc}" alt="Pothole" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color); cursor:pointer; flex-shrink:0;" onclick="event.stopPropagation(); openImageModal('${thumbSrc}', 'Pothole #${shortId} Defect Snapshot')" title="Click to inspect in zoom viewer" />` : ""}
           </div>
 
           <div class="card-footer" onclick="event.stopPropagation()">

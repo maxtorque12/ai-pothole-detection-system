@@ -395,9 +395,9 @@
     }
 
     .badge-sev-low {
-      background: rgba(234, 179, 8, 0.2);
-      color: #facc15;
-      border: 1px solid #eab308;
+      background: rgba(14, 165, 233, 0.2);
+      color: #38bdf8;
+      border: 1px solid #0ea5e9;
     }
 
     .badge-status-reported {
@@ -564,15 +564,15 @@
       animation: marker-pulse-anim 2s infinite ease-in-out;
     }
 
-    /* Image Inspection Modal */
+    /* Image Inspection Modal with Interactive Zoom */
     .image-modal {
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(4px);
+      background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(6px);
       z-index: 2000;
       display: none;
       align-items: center;
@@ -586,33 +586,86 @@
 
     .modal-content-wrap {
       position: relative;
-      max-width: 900px;
-      max-height: 90vh;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      max-width: 92vw;
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7);
     }
 
-    .modal-content-wrap img {
-      max-width: 100%;
-      max-height: 85vh;
-      border-radius: 8px;
-      border: 2px solid var(--border-color);
+    .modal-header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
     }
 
-    .modal-close {
-      position: absolute;
-      top: -14px;
-      right: -14px;
-      width: 32px;
-      height: 32px;
-      background: #ef4444;
-      color: #fff;
-      border: none;
-      border-radius: 50%;
-      font-size: 18px;
-      font-weight: bold;
+    .modal-header-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .modal-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-btn {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
       cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .modal-btn:hover {
+      background: var(--border-color);
+    }
+
+    .modal-zoom-pill {
+      font-size: 12px;
+      color: var(--text-muted);
+      min-width: 48px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .modal-img-viewport {
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
+      background: #000;
+      border-radius: 8px;
+      min-width: 360px;
+      min-height: 240px;
+      max-width: 85vw;
+      max-height: 72vh;
+      border: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    .modal-img-viewport img {
+      max-width: 100%;
+      max-height: 70vh;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      image-rendering: auto;
+      transition: transform 0.18s ease-out;
+      cursor: zoom-in;
     }
 
     /* Toast Notifications */
@@ -857,11 +910,22 @@
     </aside>
   </main>
 
-  <!-- Snapshot Modal Viewer -->
-  <div class="image-modal" id="image-modal">
+  <!-- Snapshot Modal Viewer with Zoom Controls -->
+  <div class="image-modal" id="image-modal" onclick="if(event.target === this) closeImageModal()">
     <div class="modal-content-wrap">
-      <button class="modal-close" onclick="closeImageModal()">&times;</button>
-      <img id="modal-img" src="" alt="High-Resolution Defect Snapshot" />
+      <div class="modal-header-bar">
+        <div class="modal-header-title" id="modal-title">Defect Inspection Snapshot</div>
+        <div class="modal-toolbar">
+          <button class="modal-btn" onclick="adjustModalZoom(-0.25)" title="Zoom Out (Ctrl -)">&#8722;</button>
+          <span class="modal-zoom-pill" id="modal-zoom-level">100%</span>
+          <button class="modal-btn" onclick="adjustModalZoom(0.25)" title="Zoom In (Ctrl +)">&#43;</button>
+          <button class="modal-btn" onclick="resetModalZoom()" title="Reset to Natural Size">100%</button>
+          <button class="modal-btn" style="background:#ef4444; color:#fff; border:none; margin-left:8px;" onclick="closeImageModal()" title="Close Viewer">&times;</button>
+        </div>
+      </div>
+      <div class="modal-img-viewport" onclick="toggleModalZoom()">
+        <img id="modal-img" src="" alt="Defect Snapshot" />
+      </div>
     </div>
   </div>
 

@@ -23,9 +23,9 @@ const markerMap = new Map(); // id -> L.circleMarker
  * - Low: Yellow (#EAB308)
  */
 const SEVERITY_COLORS = {
-  high: { fill: "#EF4444", border: "#B91C1C", pulse: true },
-  medium: { fill: "#F97316", border: "#C2410C", pulse: false },
-  low: { fill: "#EAB308", border: "#A16207", pulse: false },
+  high: { fill: "#EF4444", border: "#7F1D1D", pulse: true },
+  medium: { fill: "#F97316", border: "#9A3412", pulse: false },
+  low: { fill: "#0EA5E9", border: "#0369A1", pulse: false }, // High-contrast Vivid Sky Blue for clear OSM visibility
 };
 
 /**
@@ -78,19 +78,20 @@ function createPopupContent(pothole) {
   const cropSrc = resolveMediaUrl(pothole.crop_url);
 
   let imagesHtml = "";
+  const shortCode = (pothole.id || "").slice(-6).toUpperCase();
   if (snapshotSrc && cropSrc) {
     imagesHtml = `
       <div style="display:flex; gap:8px; margin: 8px 0;">
         <div style="flex:1;">
           <div style="font-size:10px; color:var(--text-muted); margin-bottom:3px; font-weight:600; text-transform:uppercase;">Scene Context</div>
           <div class="popup-image-wrap" style="height:90px;">
-            <img src="${snapshotSrc}" alt="Road context" class="popup-image" onclick="openImageModal('${snapshotSrc}')" title="Click to view full scene" />
+            <img src="${snapshotSrc}" alt="Road context" class="popup-image" onclick="openImageModal('${snapshotSrc}', 'Scene Context - #${shortCode}')" title="Click to view full scene" />
           </div>
         </div>
         <div style="flex:1;">
           <div style="font-size:10px; color:var(--text-muted); margin-bottom:3px; font-weight:600; text-transform:uppercase;">Defect Patch</div>
           <div class="popup-image-wrap" style="height:90px;">
-            <img src="${cropSrc}" alt="Pothole crop" class="popup-image" onclick="openImageModal('${cropSrc}')" title="Click to view zoomed defect" />
+            <img src="${cropSrc}" alt="Pothole crop" class="popup-image" onclick="openImageModal('${cropSrc}', 'Zoomed Defect Patch - #${shortCode}')" title="Click to view zoomed defect" />
           </div>
         </div>
       </div>
@@ -99,7 +100,7 @@ function createPopupContent(pothole) {
     const src = snapshotSrc || cropSrc;
     imagesHtml = `
       <div class="popup-image-wrap">
-        <img src="${src}" alt="Road defect snapshot" class="popup-image" onclick="openImageModal('${src}')"/>
+        <img src="${src}" alt="Road defect snapshot" class="popup-image" onclick="openImageModal('${src}', 'Pothole #${shortCode}')"/>
       </div>
     `;
   }
@@ -153,8 +154,8 @@ function updateMapMarkers(items) {
     const sevKey = pothole.severity.toLowerCase();
     const config = SEVERITY_COLORS[sevKey] || SEVERITY_COLORS.low;
 
-    // Radius proportional to severity
-    const radius = sevKey === "high" ? 14 : (sevKey === "medium" ? 11 : 8);
+    // Radius proportional to severity (clear visibility for all tiers)
+    const radius = sevKey === "high" ? 16 : (sevKey === "medium" ? 14 : 12);
 
     // Coordinate collision dispersal: offset overlapping markers so every pothole is individually clickable
     const coordKey = `${pothole.latitude.toFixed(5)},${pothole.longitude.toFixed(5)}`;
@@ -291,16 +292,47 @@ async function fetchPotholeData() {
   }
 }
 
+let currentModalZoom = 1.0;
+
 /**
- * Modal image viewer for inspecting defect snapshots in high resolution.
+ * Modal image viewer for inspecting defect snapshots with interactive zoom controls.
  */
-function openImageModal(src) {
+function openImageModal(src, title = "Defect Inspection Snapshot") {
   const modal = document.getElementById("image-modal");
   const modalImg = document.getElementById("modal-img");
+  const titleEl = document.getElementById("modal-title");
+  const zoomText = document.getElementById("modal-zoom-level");
+
   if (modal && modalImg) {
     modalImg.src = src;
+    currentModalZoom = 1.0;
+    modalImg.style.transform = "scale(1.0)";
+    if (zoomText) zoomText.textContent = "100%";
+    if (titleEl) titleEl.textContent = title;
     modal.classList.add("open");
   }
+}
+
+function adjustModalZoom(delta) {
+  const modalImg = document.getElementById("modal-img");
+  const zoomText = document.getElementById("modal-zoom-level");
+  if (!modalImg) return;
+  currentModalZoom = Math.min(Math.max(0.5, currentModalZoom + delta), 4.0);
+  modalImg.style.transform = `scale(${currentModalZoom})`;
+  if (zoomText) zoomText.textContent = `${Math.round(currentModalZoom * 100)}%`;
+}
+
+function toggleModalZoom() {
+  adjustModalZoom(currentModalZoom >= 1.5 ? -1.0 : 1.0);
+}
+
+function resetModalZoom() {
+  const modalImg = document.getElementById("modal-img");
+  const zoomText = document.getElementById("modal-zoom-level");
+  if (!modalImg) return;
+  currentModalZoom = 1.0;
+  modalImg.style.transform = "scale(1.0)";
+  if (zoomText) zoomText.textContent = "100%";
 }
 
 function closeImageModal() {
@@ -309,6 +341,20 @@ function closeImageModal() {
     modal.classList.remove("open");
   }
 }
+
+// Global hotkeys (Escape to close, +/- to zoom)
+window.addEventListener("keydown", (e) => {
+  const modal = document.getElementById("image-modal");
+  if (modal && modal.classList.contains("open")) {
+    if (e.key === "Escape") {
+      closeImageModal();
+    } else if (e.key === "+" || e.key === "=") {
+      adjustModalZoom(0.25);
+    } else if (e.key === "-" || e.key === "_") {
+      adjustModalZoom(-0.25);
+    }
+  }
+});
 
 // Global bootstrap on window load
 window.addEventListener("DOMContentLoaded", () => {

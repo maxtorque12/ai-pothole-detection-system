@@ -435,10 +435,30 @@ class PotholeDetectorEngine:
                             logger.error("Failed encoding snapshot: %s", e)
                             b64_image = ""
 
-                        # Extract clean high-resolution crop of the specific pothole
+                        # Extract high-resolution crop of the specific pothole with context margin
                         try:
-                            crop_patch = frame[max(0, y1):min(h_f, y2), max(0, x1):min(w_f, x2)]
-                            b64_crop = encode_image_base64(crop_patch) if crop_patch.size > 0 else ""
+                            # 25% contextual road padding around defect
+                            pad_x = int(bw * 0.25)
+                            pad_y = int(bh * 0.25)
+                            cx1 = max(0, x1 - pad_x)
+                            cy1 = max(0, y1 - pad_y)
+                            cx2 = min(w_f, x2 + pad_x)
+                            cy2 = min(h_f, y2 + pad_y)
+                            crop_patch = frame[cy1:cy2, cx1:cx2]
+
+                            # Upscale small defects to at least 320px for clear inspection
+                            if crop_patch.size > 0:
+                                ch, cw = crop_patch.shape[:2]
+                                if cw < 320 or ch < 320:
+                                    scale = max(320.0 / cw, 320.0 / ch)
+                                    nw = int(cw * scale)
+                                    nh = int(ch * scale)
+                                    crop_patch = cv2.resize(
+                                        crop_patch, (nw, nh), interpolation=cv2.INTER_CUBIC
+                                    )
+                                b64_crop = encode_image_base64(crop_patch)
+                            else:
+                                b64_crop = ""
                         except Exception:
                             b64_crop = ""
 
