@@ -566,7 +566,7 @@ def parse_args() -> argparse.Namespace:
         "--conf",
         type=float,
         default=config.CONFIDENCE_THRESHOLD,
-        help="Model confidence threshold (default: 0.35).",
+        help="Model confidence threshold (default: 0.20).",
     )
     parser.add_argument(
         "--backend-url",
