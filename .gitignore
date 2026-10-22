@@ -36,3 +36,6 @@ datasets/
 
 # Logs and runtime artifacts
 *.log
+cloudflared.exe
+*.pem
+
