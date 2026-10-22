@@ -128,7 +128,8 @@ class PotholeDetectorEngine:
         )
         self._http_session = requests.Session()
 
-        # Cooldown state to prevent duplicate HTTP dispatches across contiguous frames
+        # Persistent multi-object tracking and deduplication set
+        self.reported_track_ids: set[int] = set()
         self._last_dispatch_time: float = 0.0
         self._last_stream_time: float = 0.0
         self._total_detections_count: int = 0
@@ -205,9 +206,11 @@ class PotholeDetectorEngine:
         frame_h, frame_w = frame.shape[:2]
         frame_area = frame_w * frame_h
 
-        # Execute YOLO inference
-        results = self.model.predict(
+        # Execute YOLO multi-object tracking (ByteTrack)
+        results = self.model.track(
             source=frame,
+            persist=True,
+            tracker="bytetrack.yaml",
             device=self.resolved_device,
             conf=self.confidence_threshold,
             verbose=False,
@@ -225,6 +228,7 @@ class PotholeDetectorEngine:
                 conf = float(box.conf[0].cpu().numpy())
                 cls_id = int(box.cls[0].cpu().numpy())
                 class_name = self.model.names.get(cls_id, f"class_{cls_id}")
+                track_id = int(box.id[0].cpu().numpy()) if (hasattr(box, "id") and box.id is not None) else None
 
                 x1, y1, x2, y2 = map(int, xyxy)
                 bw = max(0, x2 - x1)
@@ -234,6 +238,7 @@ class PotholeDetectorEngine:
                 severity, ratio = classify_severity(bbox_area, frame_area)
 
                 detection_info = {
+                    "track_id": track_id,
                     "bbox": (x1, y1, x2, y2),
                     "confidence": round(conf, 4),
                     "class_name": class_name,
@@ -257,8 +262,11 @@ class PotholeDetectorEngine:
                 thickness = 3 if severity == "High" else 2
                 cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), box_color, thickness)
 
-                # Draw label badge
-                label_text = f"{severity.upper()} ({ratio*100:.1f}%) | {conf:.2f}"
+                # Draw label badge with persistent Track ID
+                if track_id is not None:
+                    label_text = f"ID #{track_id} {severity.upper()} ({ratio*100:.1f}%) | {conf:.2f}"
+                else:
+                    label_text = f"{severity.upper()} ({ratio*100:.1f}%) | {conf:.2f}"
                 (txt_w, txt_h), baseline = cv2.getTextSize(
                     label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 2
                 )
@@ -370,53 +378,74 @@ class PotholeDetectorEngine:
                 # 2. YOLO GPU Inference & Severity Tiering
                 annotated_frame, detections = self._annotate_and_evaluate(frame)
 
-                # 3. Alerting & Asynchronous Backend Dispatch
+                # 3. Multi-Pothole Tracking, Deduplication & Alerting
                 if detections:
-                    # Select highest severity detection in current frame
-                    priority_order = {"High": 3, "Medium": 2, "Low": 1}
-                    primary_detection = max(
-                        detections,
-                        key=lambda d: (
-                            priority_order.get(d["severity"], 0),
-                            d["bbox_ratio"],
-                        ),
-                    )
+                    h_f, w_f = frame.shape[:2]
 
-                    severity = primary_detection["severity"]
-                    confidence = primary_detection["confidence"]
-                    bbox_ratio = primary_detection["bbox_ratio"]
+                    for det in detections:
+                        track_id = det.get("track_id")
+                        severity = det["severity"]
+                        confidence = det["confidence"]
+                        bbox_ratio = det["bbox_ratio"]
+                        x1, y1, x2, y2 = det["bbox"]
 
-                    self._total_detections_count += 1
+                        # Deduplication: check if this specific pothole was already recorded
+                        if track_id is not None:
+                            if track_id in self.reported_track_ids:
+                                # Already recorded this tracked pothole! Prevent duplicate database entries.
+                                continue
+                            self.reported_track_ids.add(track_id)
+                            # Keep track ID set bounded to avoid memory growth
+                            if len(self.reported_track_ids) > 2000:
+                                self.reported_track_ids.pop()
+                        else:
+                            # Fallback time cooldown if tracking ID temporarily lost
+                            if now - self._last_dispatch_time < config.DISPATCH_COOLDOWN_SECONDS:
+                                continue
+                            self._last_dispatch_time = now
 
-                    # Trigger non-blocking audio-visual alert if High severity
-                    if severity == "High":
-                        trigger_alert(
-                            severity=severity,
-                            confidence=confidence,
-                            latitude=lat,
-                            longitude=lon,
-                            bbox_ratio=bbox_ratio,
+                        self._total_detections_count += 1
+                        logger.info(
+                            "New Unique Pothole Tracked [ID: %s, Severity: %s, Conf: %.2f]",
+                            track_id if track_id is not None else "N/A",
+                            severity,
+                            confidence,
                         )
 
-                    # Deduplication / dispatch cooldown check
-                    if now - self._last_dispatch_time >= config.DISPATCH_COOLDOWN_SECONDS:
-                        self._last_dispatch_time = now
+                        # Trigger non-blocking audio-visual alert if High severity
+                        if severity == "High":
+                            trigger_alert(
+                                severity=severity,
+                                confidence=confidence,
+                                latitude=lat,
+                                longitude=lon,
+                                bbox_ratio=bbox_ratio,
+                            )
 
-                        # Encode annotated snapshot to base64 JPEG
+                        # Encode full context snapshot with HUD & bounding boxes
                         try:
                             b64_image = encode_image_base64(annotated_frame)
                         except Exception as e:
                             logger.error("Failed encoding snapshot: %s", e)
                             b64_image = ""
 
+                        # Extract clean high-resolution crop of the specific pothole
+                        try:
+                            crop_patch = frame[max(0, y1):min(h_f, y2), max(0, x1):min(w_f, x2)]
+                            b64_crop = encode_image_base64(crop_patch) if crop_patch.size > 0 else ""
+                        except Exception:
+                            b64_crop = ""
+
                         payload = {
                             "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "track_id": track_id,
                             "latitude": lat,
                             "longitude": lon,
                             "severity": severity,
                             "confidence": confidence,
                             "bbox_ratio": bbox_ratio,
                             "image": b64_image,
+                            "crop_image": b64_crop,
                         }
 
                         # Dispatch asynchronously without stalling video pipeline

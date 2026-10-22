@@ -191,7 +191,7 @@ class DatabaseManager:
 db_manager = DatabaseManager()
 
 
-def save_base64_snapshot(b64_data: str) -> str:
+def save_base64_snapshot(b64_data: str, prefix: str = "pothole") -> str:
     """Decodes base64 image data and writes a JPEG file to UPLOAD_FOLDER.
 
     Returns:
@@ -206,7 +206,7 @@ def save_base64_snapshot(b64_data: str) -> str:
 
     try:
         raw_bytes = base64.b64decode(b64_data)
-        filename = f"pothole_{uuid.uuid4().hex[:12]}.jpg"
+        filename = f"{prefix}_{uuid.uuid4().hex[:12]}.jpg"
         target_path = config.UPLOAD_FOLDER / filename
         with open(target_path, "wb") as f:
             f.write(raw_bytes)
@@ -273,10 +273,13 @@ def report_pothole():
         confidence = 0.5
 
     timestamp = data.get("timestamp") or datetime.now(timezone.utc).isoformat()
+    track_id = data.get("track_id")
     raw_image_data = data.get("image", "")
+    raw_crop_data = data.get("crop_image", "")
 
-    # 2. Snapshot persistence
-    image_url = save_base64_snapshot(raw_image_data)
+    # 2. Snapshot persistence (saves both full scene and high-res cropped defect)
+    image_url = save_base64_snapshot(raw_image_data, prefix="pothole")
+    crop_url = save_base64_snapshot(raw_crop_data, prefix="crop") if raw_crop_data else ""
 
     # 3. Spatial Clustering (Haversine 5m radius deduplication)
     existing_potholes = db_manager.find_all(limit=200)
@@ -301,6 +304,7 @@ def report_pothole():
     # 4. Construct persistence document
     record: Dict[str, Any] = {
         "timestamp": timestamp,
+        "track_id": track_id,
         "latitude": round(lat, 6),
         "longitude": round(lon, 6),
         "location": {
@@ -312,6 +316,7 @@ def report_pothole():
         "bbox_ratio": data.get("bbox_ratio"),
         "status": "reported",
         "image_url": image_url,
+        "crop_url": crop_url,
         "cluster_id": cluster_id,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }

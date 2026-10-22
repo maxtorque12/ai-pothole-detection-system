@@ -202,24 +202,34 @@ function renderWorkOrders(items) {
       const confidencePct = Math.round((item.confidence || 0.8) * 100);
       const ratioPct = item.bbox_ratio ? (item.bbox_ratio * 100).toFixed(1) + "%" : "N/A";
       const streetName = item.street || `Lat: ${item.latitude.toFixed(4)}, Lon: ${item.longitude.toFixed(4)}`;
+      const baseUrl = (typeof BACKEND_BASE_URL !== "undefined")
+        ? BACKEND_BASE_URL
+        : (window.location.port === "5000" ? window.location.origin : "http://127.0.0.1:5000");
+      const thumb = item.crop_url || item.image_url;
+      const thumbSrc = thumb
+        ? (thumb.startsWith("http") || thumb.startsWith("data:") ? thumb : `${baseUrl}${thumb}`)
+        : "";
 
       return `
         <div class="work-order-card" id="card-${item.id}" onclick="focusPothole('${item.id}')">
           <div class="card-header">
-            <span class="card-id">#${shortId}</span>
+            <span class="card-id">#${shortId}${item.track_id ? ` <small style="color:var(--text-muted);font-weight:normal;">(ID #${item.track_id})</small>` : ""}</span>
             <div class="card-tags">
               <span class="badge ${sevClass}">${item.severity.toUpperCase()}</span>
               <span class="badge ${statusClass}">${item.status.toUpperCase()}</span>
             </div>
           </div>
           
-          <div class="card-body">
-            <div class="card-street">${streetName}</div>
-            <div class="card-meta">
-              <span><b>Area:</b> ${ratioPct}</span>
-              <span><b>Conf:</b> ${confidencePct}%</span>
-              <span><b>Time:</b> ${timeStr}</span>
+          <div class="card-body" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <div style="flex:1;">
+              <div class="card-street">${streetName}</div>
+              <div class="card-meta">
+                <span><b>Area:</b> ${ratioPct}</span>
+                <span><b>Conf:</b> ${confidencePct}%</span>
+                <span><b>Time:</b> ${timeStr}</span>
+              </div>
             </div>
+            ${thumbSrc ? `<img src="${thumbSrc}" alt="Pothole" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color); cursor:pointer; flex-shrink:0;" onclick="event.stopPropagation(); openImageModal('${thumbSrc}')" title="Click to enlarge" />` : ""}
           </div>
 
           <div class="card-footer" onclick="event.stopPropagation()">

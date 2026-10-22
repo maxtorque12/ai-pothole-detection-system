@@ -79,17 +79,22 @@ class TestPotholeSystem(unittest.TestCase):
         # 1. POST
         res_post = client.post("/api/v1/potholes", json={
             "timestamp": "2026-10-22T10:00:00Z",
+            "track_id": 42,
             "latitude": 28.6139,
             "longitude": 77.2090,
             "severity": "High",
             "confidence": 0.94,
-            "image": b64
+            "image": b64,
+            "crop_image": b64,
         })
         self.assertEqual(res_post.status_code, 201)
         data = res_post.get_json()["data"]
         doc_id = data["id"]
         self.assertEqual(data["severity"], "High")
         self.assertEqual(data["status"], "reported")
+        self.assertEqual(data["track_id"], 42)
+        self.assertTrue(data["image_url"].startswith("/uploads/pothole_"))
+        self.assertTrue(data["crop_url"].startswith("/uploads/crop_"))
 
         # 2. GET
         res_get = client.get("/api/v1/potholes?severity=High")

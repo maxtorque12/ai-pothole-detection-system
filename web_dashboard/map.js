@@ -69,24 +69,50 @@ function createPopupContent(pothole) {
         ? pothole.image_url 
         : `${BACKEND_BASE_URL}${pothole.image_url}`)
     : "";
+  const cropSrc = pothole.crop_url
+    ? (pothole.crop_url.startsWith("http") || pothole.crop_url.startsWith("data:")
+        ? pothole.crop_url
+        : `${BACKEND_BASE_URL}${pothole.crop_url}`)
+    : "";
+
+  let imagesHtml = "";
+  if (snapshotSrc && cropSrc) {
+    imagesHtml = `
+      <div style="display:flex; gap:8px; margin: 8px 0;">
+        <div style="flex:1;">
+          <div style="font-size:10px; color:var(--text-muted); margin-bottom:3px; font-weight:600; text-transform:uppercase;">Scene Context</div>
+          <div class="popup-image-wrap" style="height:90px;">
+            <img src="${snapshotSrc}" alt="Road context" class="popup-image" onclick="openImageModal('${snapshotSrc}')" title="Click to view full scene" />
+          </div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:10px; color:var(--text-muted); margin-bottom:3px; font-weight:600; text-transform:uppercase;">Defect Patch</div>
+          <div class="popup-image-wrap" style="height:90px;">
+            <img src="${cropSrc}" alt="Pothole crop" class="popup-image" onclick="openImageModal('${cropSrc}')" title="Click to view zoomed defect" />
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (snapshotSrc || cropSrc) {
+    const src = snapshotSrc || cropSrc;
+    imagesHtml = `
+      <div class="popup-image-wrap">
+        <img src="${src}" alt="Road defect snapshot" class="popup-image" onclick="openImageModal('${src}')"/>
+      </div>
+    `;
+  }
 
   return `
     <div class="popup-container">
       <div class="popup-header" style="border-left: 4px solid ${colors.fill};">
-        <div class="popup-title">Pothole #${(pothole.id || "").slice(-6).toUpperCase()}</div>
+        <div class="popup-title">Pothole #${(pothole.id || "").slice(-6).toUpperCase()}${pothole.track_id ? ` (Track #${pothole.track_id})` : ""}</div>
         <div class="popup-badges">
           <span class="badge badge-sev-${sevKey}">${pothole.severity.toUpperCase()}</span>
           <span class="badge badge-status-${pothole.status.replace("-", "")}">${pothole.status.toUpperCase()}</span>
         </div>
       </div>
 
-      ${
-        snapshotSrc
-          ? `<div class="popup-image-wrap">
-               <img src="${snapshotSrc}" alt="Road defect snapshot" class="popup-image" onclick="openImageModal('${snapshotSrc}')"/>
-             </div>`
-          : ""
-      }
+      ${imagesHtml}
 
       <div class="popup-details">
         <div><b>Location:</b> ${streetName}</div>
