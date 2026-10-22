@@ -137,13 +137,16 @@ class PotholeDetectorEngine:
         )
         mock_coords = (lat, lon) if (lat is not None and lon is not None) else None
         
-        # Configure live phone GPS sensor URL if provided
+        # Configure live phone GPS sensor URL if provided (or auto-infer from source)
         resolved_gps_url = None
         if gps_url:
             resolved_gps_url = gps_url
         elif phone_ip:
             clean_ip = phone_ip.replace("http://", "").replace("https://", "").strip("/")
             resolved_gps_url = f"http://{clean_ip}/sensors.json" if ":8080" in clean_ip else f"http://{clean_ip}:8080/sensors.json"
+        elif self.source and "http://" in self.source and ":8080" in self.source:
+            base_url = self.source.split(":8080")[0]
+            resolved_gps_url = f"{base_url}:8080/sensors.json"
 
         self.gps_tracker = GPSTracker(
             endpoint_url=resolved_gps_url,
