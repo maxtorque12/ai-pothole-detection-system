@@ -102,6 +102,8 @@ class PotholeDetectorEngine:
         lat: Optional[float] = None,
         lon: Optional[float] = None,
         water_mode: bool = False,
+        gps_url: Optional[str] = None,
+        phone_ip: Optional[str] = None,
     ) -> None:
         self.model_path = model_path or config.MODEL_PATH
         self.target_device = device or config.EDGE_DEVICE
@@ -134,7 +136,19 @@ class PotholeDetectorEngine:
             webcam_fallback_index=self.camera_index,
         )
         mock_coords = (lat, lon) if (lat is not None and lon is not None) else None
-        self.gps_tracker = GPSTracker(mock_coords=mock_coords)
+        
+        # Configure live phone GPS sensor URL if provided
+        resolved_gps_url = None
+        if gps_url:
+            resolved_gps_url = gps_url
+        elif phone_ip:
+            clean_ip = phone_ip.replace("http://", "").replace("https://", "").strip("/")
+            resolved_gps_url = f"http://{clean_ip}/sensors.json" if ":8080" in clean_ip else f"http://{clean_ip}:8080/sensors.json"
+
+        self.gps_tracker = GPSTracker(
+            endpoint_url=resolved_gps_url,
+            mock_coords=mock_coords,
+        )
 
         # Thread pool for non-blocking asynchronous POST requests to backend
         self._dispatch_executor = ThreadPoolExecutor(
@@ -592,6 +606,18 @@ def parse_args() -> argparse.Namespace:
         help="Enable adaptive CLAHE contrast enhancement for wet/water-filled roads and specular reflections.",
     )
     parser.add_argument(
+        "--phone-ip",
+        type=str,
+        default=None,
+        help="IP address of phone running IP Webcam for GPS sensors (e.g. 192.168.1.15).",
+    )
+    parser.add_argument(
+        "--gps-url",
+        type=str,
+        default=None,
+        help="Custom GPS telemetry endpoint URL (e.g. http://192.168.1.15:8080/sensors.json).",
+    )
+    parser.add_argument(
         "--no-display",
         action="store_true",
         help="Run headless without rendering OpenCV GUI window.",
@@ -614,6 +640,8 @@ def main() -> None:
         lat=args.lat,
         lon=args.lon,
         water_mode=args.water_mode,
+        gps_url=args.gps_url,
+        phone_ip=args.phone_ip,
     )
     engine.run()
 
