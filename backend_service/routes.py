@@ -422,6 +422,25 @@ _live_frame_lock = threading.Lock()
 _live_frame_event = threading.Event()
 
 
+def _get_placeholder_frame() -> bytes:
+    """Generates an initial placeholder frame before camera starts transmitting."""
+    import cv2
+    import numpy as np
+    placeholder = np.zeros((300, 400, 3), dtype=np.uint8)
+    cv2.putText(
+        placeholder,
+        "CONNECTING TO CAMERA...",
+        (40, 150),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.65,
+        (0, 200, 255),
+        2,
+        cv2.LINE_AA,
+    )
+    _, buffer = cv2.imencode(".jpg", placeholder, [int(cv2.IMWRITE_JPEG_QUALITY), 70])
+    return buffer.tobytes()
+
+
 @api_bp.route("/live_frame", methods=["POST"])
 def ingest_live_frame():
     """Ingests latest JPEG frame from edge detector."""
@@ -438,18 +457,25 @@ def ingest_live_frame():
 def stream_live_video():
     """Streams MJPEG feed to browsers and smartphones."""
     def generate():
+        placeholder = _get_placeholder_frame()
         while True:
-            _live_frame_event.wait(timeout=0.1)
+            # Wait up to 150ms for new camera frame
+            signaled = _live_frame_event.wait(timeout=0.15)
             _live_frame_event.clear()
             with _live_frame_lock:
                 frame = _live_frame_bytes
-            if frame:
+
+            if frame is not None:
                 yield (
                     b"--frame\r\n"
                     b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
                 )
             else:
-                time.sleep(0.05)
+                yield (
+                    b"--frame\r\n"
+                    b"Content-Type: image/jpeg\r\n\r\n" + placeholder + b"\r\n"
+                )
+                time.sleep(0.2)
 
     return Response(
         generate(),
