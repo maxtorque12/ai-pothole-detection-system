@@ -524,6 +524,9 @@ class PotholeDetectorEngine:
                     if key in (ord("q"), ord("Q"), 27):  # 'q' or ESC
                         logger.info("Termination key pressed. Exiting...")
                         break
+                else:
+                    # Gentle sleep to throttle CPU when running headless
+                    time.sleep(0.005)
 
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt received. Shutting down...")
