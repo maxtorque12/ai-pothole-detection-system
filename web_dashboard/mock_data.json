@@ -10,6 +10,7 @@
     "status": "reported",
     "cluster_id": "cluster_cp_inner_01",
     "street": "Radial Road 1, Connaught Place",
+    "crop_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'><rect width='320' height='200' fill='%23111315'/><path d='M20 120 Q80 40 180 60 T300 130 Q220 180 100 160 Z' fill='%2308090a' stroke='%23ef4444' stroke-width='5'/><text x='160' y='30' fill='%23ef4444' font-family='sans-serif' font-weight='bold' font-size='16' text-anchor='middle'>ZOOM DEFECT CROP (3.2x)</text></svg>",
     "image_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'><rect width='320' height='200' fill='%2322252a'/><path d='M40 140 Q90 60 170 80 T280 150 Q210 190 120 170 Z' fill='%23111315' stroke='%23ef4444' stroke-width='4'/><text x='160' y='40' fill='%23ef4444' font-family='sans-serif' font-weight='bold' font-size='15' text-anchor='middle'>HIGH SEVERITY POTHOLE (8.25%)</text><rect x='30' y='60' width='260' height='120' fill='none' stroke='%23ef4444' stroke-width='2' stroke-dasharray='4'/></svg>"
   },
   {
@@ -23,6 +24,7 @@
     "status": "in-progress",
     "cluster_id": "cluster_barakhamba_02",
     "street": "Barakhamba Road Junction",
+    "crop_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'><rect width='320' height='200' fill='%23141619'/><path d='M50 110 Q100 70 170 80 T260 125 Q180 155 90 145 Z' fill='%230b0d0e' stroke='%23f97316' stroke-width='4'/><text x='160' y='30' fill='%23f97316' font-family='sans-serif' font-weight='bold' font-size='16' text-anchor='middle'>ZOOM DEFECT CROP (2.8x)</text></svg>",
     "image_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'><rect width='320' height='200' fill='%2325282e'/><path d='M70 120 Q120 80 180 90 T250 130 Q190 160 110 150 Z' fill='%23141619' stroke='%23f97316' stroke-width='3'/><text x='160' y='40' fill='%23f97316' font-family='sans-serif' font-weight='bold' font-size='15' text-anchor='middle'>MEDIUM DEFECT (4.10%)</text><rect x='60' y='75' width='200' height='90' fill='none' stroke='%23f97316' stroke-width='2' stroke-dasharray='4'/></svg>"
   },
   {
@@ -36,7 +38,8 @@
     "status": "reported",
     "cluster_id": "cluster_sansad_03",
     "street": "Sansad Marg Outer Circle",
-    "image_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'><rect width='320' height='200' fill='%232b2f36'/><ellipse cx='160' cy='120' rx='45' ry='25' fill='%23181a1d' stroke='%23eab308' stroke-width='2'/><text x='160' y='40' fill='%23eab308' font-family='sans-serif' font-weight='bold' font-size='15' text-anchor='middle'>LOW SURFACE CRACK (1.45%)</text><rect x='105' y='85' width='110' height='70' fill='none' stroke='%23eab308' stroke-width='1.5' stroke-dasharray='3'/></svg>"
+    "crop_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'><rect width='320' height='200' fill='%23181a1d'/><ellipse cx='160' cy='120' rx='60' ry='35' fill='%230f1012' stroke='%230ea5e9' stroke-width='3'/><text x='160' y='30' fill='%230ea5e9' font-family='sans-serif' font-weight='bold' font-size='16' text-anchor='middle'>ZOOM DEFECT CROP (2.1x)</text></svg>",
+    "image_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'><rect width='320' height='200' fill='%232b2f36'/><ellipse cx='160' cy='120' rx='45' ry='25' fill='%23181a1d' stroke='%230ea5e9' stroke-width='2'/><text x='160' y='40' fill='%230ea5e9' font-family='sans-serif' font-weight='bold' font-size='15' text-anchor='middle'>LOW SURFACE CRACK (1.45%)</text><rect x='105' y='85' width='110' height='70' fill='none' stroke='%230ea5e9' stroke-width='1.5' stroke-dasharray='3'/></svg>"
   },
   {
     "id": "pot-delhi-004",
@@ -49,6 +52,7 @@
     "status": "reported",
     "cluster_id": "cluster_minto_04",
     "street": "Minto Road Underpass Approach",
+    "crop_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'><rect width='320' height='200' fill='%230f1012'/><path d='M25 115 Q80 35 190 55 T300 130 Q220 180 85 165 Z' fill='%23050607' stroke='%23ef4444' stroke-width='5'/><text x='160' y='30' fill='%23ef4444' font-family='sans-serif' font-weight='bold' font-size='16' text-anchor='middle'>ZOOM CRATER CROP (3.5x)</text></svg>",
     "image_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'><rect width='320' height='200' fill='%231d2024'/><path d='M30 130 Q90 50 190 70 T290 145 Q230 195 100 180 Z' fill='%230f1012' stroke='%23ef4444' stroke-width='4'/><text x='160' y='40' fill='%23ef4444' font-family='sans-serif' font-weight='bold' font-size='15' text-anchor='middle'>HIGH SEVERITY CRATER (9.10%)</text><rect x='25' y='55' width='270' height='135' fill='none' stroke='%23ef4444' stroke-width='2' stroke-dasharray='4'/></svg>"
   },
   {
@@ -62,6 +66,7 @@
     "status": "repaired",
     "cluster_id": "cluster_janpath_05",
     "street": "Janpath Road Lane 3",
+    "crop_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'><rect width='320' height='200' fill='%2319201c'/><path d='M60 115 Q120 75 190 85 T270 130 Q190 160 90 145 Z' fill='%2326302a' stroke='%2310b981' stroke-width='4'/><text x='160' y='30' fill='%2310b981' font-family='sans-serif' font-weight='bold' font-size='16' text-anchor='middle'>REPAIRED PATCH CROP</text></svg>",
     "image_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'><rect width='320' height='200' fill='%2322252a'/><path d='M70 125 Q130 90 200 95 T260 140 Q180 165 110 155 Z' fill='%2338423b' stroke='%2310b981' stroke-width='3'/><text x='160' y='40' fill='%2310b981' font-family='sans-serif' font-weight='bold' font-size='15' text-anchor='middle'>REPAIRED COLD-PATCH</text><text x='160' y='130' fill='%23ffffff' font-family='sans-serif' font-size='14' font-weight='bold' text-anchor='middle'>COMPLETED</text></svg>"
   }
 ]

@@ -90,6 +90,30 @@ function initFilters() {
       }
     });
   }
+
+  // Seed demo sample potholes button
+  const seedBtn = document.getElementById("seed-btn");
+  if (seedBtn) {
+    seedBtn.addEventListener("click", async () => {
+      try {
+        const resp = await fetch("mock_data.json");
+        if (resp.ok) {
+          const sampleData = await resp.json();
+          allPotholes = [...sampleData];
+          renderPotholes();
+          updateMetrics();
+          applyFilters();
+          // Pan map to first demo pothole
+          if (map && allPotholes.length > 0) {
+            map.flyTo([allPotholes[0].latitude, allPotholes[0].longitude], 15);
+          }
+          showToast("Loaded 5 realistic demo potholes with dual-image inspection!", "success");
+        }
+      } catch (err) {
+        showToast("Failed loading demo data.", "error");
+      }
+    });
+  }
 }
 
 /**
