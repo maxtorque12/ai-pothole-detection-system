@@ -82,12 +82,16 @@ def main():
     )
 
     # 5. Export and copy best weights
-    best_weights = ROOT_DIR / "runs" / "pothole_training" / "run_water_perspective" / "weights" / "best.pt"
+    potential_paths = [
+        ROOT_DIR / "runs" / "detect" / "runs" / "pothole_training" / "run_water_perspective" / "weights" / "best.pt",
+        ROOT_DIR / "runs" / "pothole_training" / "run_water_perspective" / "weights" / "best.pt",
+    ]
+    best_weights = next((p for p in potential_paths if p.exists()), None)
     export_dir = ROOT_DIR / "weights"
     export_dir.mkdir(parents=True, exist_ok=True)
     target_weights = export_dir / "pothole_best.pt"
 
-    if best_weights.exists():
+    if best_weights and best_weights.exists():
         shutil.copy(best_weights, target_weights)
         print("\n====================================================================")
         print(" ALL 50 EPOCHS COMPLETED SUCCESSFULLY!")
