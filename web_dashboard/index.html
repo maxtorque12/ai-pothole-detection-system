@@ -751,7 +751,43 @@
       display: flex;
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 768px) {
+      .topbar {
+        height: auto;
+        padding: 8px 12px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+      .brand-title h1 {
+        font-size: 13px;
+      }
+      .brand-title p {
+        display: none;
+      }
+      .metrics-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+      .metric-pill {
+        padding: 4px 8px;
+        font-size: 11px;
+      }
+      .sidebar {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 88vw;
+        max-width: 380px;
+        box-shadow: -6px 0 24px rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+      }
+      .sidebar-collapsed .sidebar {
+        margin-right: -88vw;
+      }
       .live-stream-pip {
         left: 10px;
         right: 10px;
