@@ -46,7 +46,10 @@ class EdgeConfig:
 
     # Local Hardware & Model
     EDGE_DEVICE: str = os.getenv("EDGE_DEVICE", "0")
-    MODEL_PATH: str = os.getenv("MODEL_PATH", "yolov8n.pt")
+    MODEL_PATH: str = os.getenv(
+        "MODEL_PATH",
+        "weights/pothole_best.pt" if Path("weights/pothole_best.pt").exists() else "yolov8n.pt",
+    )
     CONFIDENCE_THRESHOLD: float = float(os.getenv("CONFIDENCE_THRESHOLD", "0.35"))
 
     # Local Webcam Fallback
