@@ -291,7 +291,11 @@ def report_pothole():
 
     # 2. Snapshot persistence (saves both full scene and high-res cropped defect)
     image_url = save_base64_snapshot(raw_image_data, prefix="pothole")
+    if not image_url and data.get("image_url"):
+        image_url = data.get("image_url")
     crop_url = save_base64_snapshot(raw_crop_data, prefix="crop") if raw_crop_data else ""
+    if not crop_url and data.get("crop_url"):
+        crop_url = data.get("crop_url")
 
     # 3. Spatial Clustering (Haversine 5m radius deduplication)
     existing_potholes = db_manager.find_all(limit=200)
@@ -326,6 +330,7 @@ def report_pothole():
         "severity": normalized_severity,
         "confidence": round(confidence, 4),
         "bbox_ratio": data.get("bbox_ratio"),
+        "street": data.get("street"),
         "status": "reported",
         "image_url": image_url,
         "crop_url": crop_url,
